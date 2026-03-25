@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright © 2026 - Author: Andreas Nilsen - Github: https://www.github.com/adde88 - adde88@gmail.com - @adde88 (24.03.26)
+# Copyright © 2026 - Author: Andreas Nilsen - Github: https://www.github.com/adde88 - adde88@gmail.com - @adde88 (25.03.26)
 
 import os
 import sys
@@ -24,11 +24,41 @@ class Colors:
     RESET = '\033[0m'
     BOLD = '\033[1m'
 
-# MODIFY THESE PATHS TO YOUR OWN!!!!! 
-# THE SCRIPT WILL NOT WORK IF THE PATHS ARE NOT CORRECT!!!!!
-MODELS_DIR = Path(r"C:\CHANGE_ME_1")
-BLOBS_DIR = Path(r"C:\CHANGE_ME_2")
-MODELFILES_DIR = Path(r"C:\CHANGE_ME_3")
+# --- CONFIGURATION LOGIC ---
+# The script prioritizes Environment Variables if set.
+# If they are not set, it falls back to the static DEFAULT paths below.
+#
+# Environment Variable Rules:
+# 1. MODELS_DIR: Uses %HF_HOME% if exists.
+# 2. BLOBS_DIR: Uses %BLOBS_DIR% if exists. If not, uses %HF_HOME%\blobs.
+# 3. MODELFILES_DIR: Uses %MODELFILES_DIR% if exists.
+#
+# To set environment variables in Windows (Command Prompt / PowerShell):
+# setx HF_HOME "C:\Your\Models\Path"
+# setx BLOBS_DIR "C:\Your\Blobs\Path"
+# setx MODELFILES_DIR "C:\Your\Modelfiles\Path"
+
+# STATIC FALLBACK PATHS (Modify these if you don't use environment variables!)
+DEFAULT_MODELS = Path(r"C:\CHANGE_ME_1")
+DEFAULT_BLOBS = Path(r"C:\CHANGE_ME_2")
+DEFAULT_MODELFILES = Path(r"C:\CHANGE_ME_3")
+
+# Resolve MODELS_DIR
+hf_home_env = os.environ.get("HF_HOME")
+MODELS_DIR = Path(hf_home_env) if hf_home_env else DEFAULT_MODELS
+
+# Resolve BLOBS_DIR
+blobs_dir_env = os.environ.get("BLOBS_DIR")
+if blobs_dir_env:
+    BLOBS_DIR = Path(blobs_dir_env)
+elif hf_home_env:
+    BLOBS_DIR = Path(hf_home_env) / "blobs"
+else:
+    BLOBS_DIR = DEFAULT_BLOBS
+
+# Resolve MODELFILES_DIR
+modelfiles_dir_env = os.environ.get("MODELFILES_DIR")
+MODELFILES_DIR = Path(modelfiles_dir_env) if modelfiles_dir_env else DEFAULT_MODELFILES
 
 def format_bytes(size_in_bytes: int) -> str:
     """Formats bytes into readable MB, GB, or TB strings."""
@@ -41,7 +71,7 @@ def format_bytes(size_in_bytes: int) -> str:
 
 def print_header():
     """Prints the project header, copyright, and current storage status."""
-    target_drive = BLOBS_DIR.anchor
+    target_drive = BLOBS_DIR.anchor if BLOBS_DIR.exists() else "C:\\"
     try:
         total, used, free = shutil.disk_usage(target_drive)
         storage_str = f"{format_bytes(free)} / {format_bytes(total)}"
@@ -53,11 +83,21 @@ def print_header():
     print(f"{Colors.MAGENTA}{Colors.BOLD}======================================================================{Colors.RESET}")
     print(f"{Colors.BLUE}Copyright © 2026 - Author: Andreas Nilsen{Colors.RESET}")
     print(f"{Colors.BLUE}GitHub: https://www.github.com/adde88 - adde88@gmail.com - @adde88{Colors.RESET}")
-    print(f"{Colors.BLUE}Date: (24.03.26){Colors.RESET}")
+    print(f"{Colors.BLUE}Date: (25.03.26){Colors.RESET}")
     print(f"{Colors.GREEN}{Colors.BOLD}Storage ({target_drive}): {storage_str} Available{Colors.RESET}\n")
+    
+    # Path summary for transparency
+    print(f"{Colors.YELLOW}Active Paths:{Colors.RESET}")
+    print(f"  Models:     {MODELS_DIR}")
+    print(f"  Blobs:      {BLOBS_DIR}")
+    print(f"  Modelfiles: {MODELFILES_DIR}\n")
 
 def check_disk_space(model_path: Path):
     """Checks if there is enough space on the target drive before proceeding."""
+    if not BLOBS_DIR.parent.exists():
+        print(f"{Colors.YELLOW}[!] Warning: The parent directory for BLOBS_DIR does not exist. Ensure paths are correct.{Colors.RESET}")
+        return
+
     target_drive = BLOBS_DIR.anchor
     try:
         free_space = shutil.disk_usage(target_drive).free
@@ -105,6 +145,11 @@ def calculate_sha256(file_path: Path) -> str:
 
 def interactive_model_selection() -> Path:
     """Searches through MODELS_DIR and lets the user select a file via a number."""
+    if not MODELS_DIR.exists():
+        print(f"{Colors.RED}[!] MODELS_DIR does not exist: {MODELS_DIR}{Colors.RESET}")
+        print(f"{Colors.YELLOW}    Check your environment variables or fallback paths.{Colors.RESET}")
+        sys.exit(1)
+
     print(f"{Colors.CYAN}[*] Searching for .gguf files in {MODELS_DIR}...{Colors.RESET}\n")
     gguf_files = list(MODELS_DIR.rglob("*.gguf"))
     
@@ -113,7 +158,10 @@ def interactive_model_selection() -> Path:
         sys.exit(1)
         
     for index, file_path in enumerate(gguf_files, start=1):
-        rel_path = file_path.relative_to(MODELS_DIR)
+        try:
+            rel_path = file_path.relative_to(MODELS_DIR)
+        except ValueError:
+            rel_path = file_path.name
         file_size = format_bytes(os.path.getsize(file_path))
         print(f"{Colors.YELLOW}[{index}]{Colors.RESET} {rel_path} {Colors.CYAN}({file_size}){Colors.RESET}")
         
@@ -152,7 +200,10 @@ def interactive_modelfile_selection(matches: list[Path]) -> Path:
     print(f"{Colors.GREEN}[+] Found {len(matches)} Modelfiles targeting this model:{Colors.RESET}\n")
     
     for index, file_path in enumerate(matches, start=1):
-        rel_path = file_path.relative_to(MODELFILES_DIR)
+        try:
+            rel_path = file_path.relative_to(MODELFILES_DIR)
+        except ValueError:
+            rel_path = file_path.name
         print(f"{Colors.YELLOW}[{index}]{Colors.RESET} {rel_path}")
         
     while True:
