@@ -27,9 +27,9 @@ class Colors:
 # ==========================================
 # PATH CONFIGURATION (CHANGE THESE IF NEEDED)
 # ==========================================
-MODELS_DIR = Path(r"G:\LLM-MODELS\models")
-BLOBS_DIR = Path(r"G:\LLM-MODELS\blobs")
-MODELFILES_DIR = Path(r"G:\LLM-MODELS\Modelfiles")
+MODELS_DIR = Path(r"CHANGE_ME_1")
+BLOBS_DIR = Path(r"CHANGE_ME_2")
+MODELFILES_DIR = Path(r"CHANGE_ME_3")
 
 # Cache for Modelfiles to avoid repeated file operations
 _MODELFILE_CACHE = []
