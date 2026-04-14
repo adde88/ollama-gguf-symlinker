@@ -12,6 +12,7 @@ OllamaForge automates the import process, fixes Ollama's pathing bugs, and elega
 1. **Dynamic Path Resolution:** It reads your `Modelfile`, creates a temporary background copy with an absolute, safe path to your `.gguf` file, and feeds *that* to Ollama. This completely eliminates the "invalid model name" error.
 2. **Pre-calculation & Caching:** It calculates the exact SHA-256 hash of your model while displaying a clean progress bar, and caches Modelfiles in memory for lightning-fast lookups.
 3. **Symlink Optimization:** Once Ollama finishes importing the model, the script seamlessly deletes Ollama's duplicated blob and replaces it with a **symlink** pointing back to your original `.gguf` file.
+4. **Daemon Validation:** It runs a pre-flight check to ensure the Ollama background service is active and responding, preventing infinite hangs or broken imports.
 
 You keep one physical copy of the model, saving terabytes of space over time, while all your software works perfectly.
 
@@ -22,7 +23,7 @@ You keep one physical copy of the model, saving terabytes of space over time, wh
 * **Interactive Uninstaller:** Clean up your Ollama registry effortlessly with a built-in multi-select uninstaller.
 * **Headless Mode:** Pass arguments directly for easy automation in batch scripts.
 * **Auto-Detect Modelfiles:** Scans your directory to find matching `Modelfile`s for your specific `.gguf` automatically, utilizing intelligent regex quantization tag detection.
-* **Pre-Flight Disk Check:** Ensures you have enough temporary space for Ollama to process the file before starting, gracefully skipping models in batch queues if space is insufficient.
+* **Pre-Flight Disk & Service Check:** Ensures you have enough temporary space for Ollama to process the file and that the service is running before starting, gracefully skipping models in batch queues if space is insufficient.
 
 ## Prerequisites
 * **OS:** Windows (Linux/macOS support is native, but default paths in the script are currently configured for Windows).
@@ -31,9 +32,9 @@ You keep one physical copy of the model, saving terabytes of space over time, wh
 * **Permissions:** To create symlinks in Windows, you must either run the script as **Administrator**, or enable **Developer Mode** in Windows Settings (`Privacy & security` -> `For developers` -> `Developer Mode`).
 
 ## ⚙️ Configuration
-The script uses direct directory paths for maximum stability. You **must** open `ollama_forge.py` (or whatever you named the script) in a text editor and modify the hardcoded paths at the top of the file to match your setup:
+The script uses direct directory paths for maximum stability. By default, it is configured for the `G:\` drive, but you can open `ollama_symlinker_new.py` in a text editor and modify the hardcoded paths at the top of the file to match your exact setup:
 
 ```python
-MODELS_DIR = Path(r"C:\CHANGE_ME_1")         # Where your .gguf files are stored
-BLOBS_DIR = Path(r"C:\CHANGE_ME_2")           # Where Ollama stores its blobs
-MODELFILES_DIR = Path(r"C:\CHANGE_ME_3") # Where you keep your 'Ollama Modelfiles'
+MODELS_DIR = Path(r"G:\LLM-MODELS\models")       # Where your .gguf files are stored
+BLOBS_DIR = Path(r"G:\LLM-MODELS\blobs")         # Where Ollama stores its blobs
+MODELFILES_DIR = Path(r"G:\LLM-MODELS\Modelfiles") # Where you keep your 'Ollama Modelfiles'

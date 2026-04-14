@@ -4,6 +4,16 @@ All notable changes to the OllamaForge GGUF Auto-Importer & Symlinker project wi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to Semantic Versioning.
 
+## [Released] - 2026-04-14
+
+### Added
+* Pre-flight daemon validation (`ensure_ollama_running`) to verify the Ollama service is actively running before initiating any file operations.
+* Subprocess timeout handling (5 seconds) to prevent the script from hanging indefinitely if the Ollama daemon is unresponsive or deadlocked.
+
+### Changed
+* Updated the default storage paths for `MODELS_DIR`, `BLOBS_DIR`, and `MODELFILES_DIR` to explicit local drive directories (`G:\LLM-MODELS\...`) instead of placeholder variables.
+* Updated script author header date to 13.04.26.
+
 ## [Released] - 2026-04-05
 
 ### Added

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright © 2026 - Author: Andreas Nilsen - Github: https://www.github.com/adde88 - adde88@gmail.com - @adde88 (05.04.26)
+# Copyright © 2026 - Author: Andreas Nilsen - Github: https://www.github.com/adde88 - adde88@gmail.com - @adde88 (13.04.26)
 
 import os
 import sys
@@ -25,11 +25,11 @@ class Colors:
     BOLD = '\033[1m'
 
 # ==========================================
-# PATH CONFIGURATION (CHANGE THESE IF NEEDED)
+# PATH CONFIGURATION (CHANGE THESE TO YOUR NEEDS!!!!)
 # ==========================================
-MODELS_DIR = Path(r"CHANGE_ME_1")
-BLOBS_DIR = Path(r"CHANGE_ME_2")
-MODELFILES_DIR = Path(r"CHANGE_ME_3")
+MODELS_DIR = Path(r"C:\LLM-MODELS\models")
+BLOBS_DIR = Path(r"C:\LLM-MODELS\blobs")
+MODELFILES_DIR = Path(r"C:\LLM-MODELS\Modelfiles")
 
 # Cache for Modelfiles to avoid repeated file operations
 _MODELFILE_CACHE = []
@@ -57,8 +57,36 @@ def print_header():
     print(f"{Colors.MAGENTA}{Colors.BOLD}======================================================================{Colors.RESET}")
     print(f"{Colors.BLUE}Copyright © 2026 - Author: Andreas Nilsen{Colors.RESET}")
     print(f"{Colors.BLUE}GitHub: https://www.github.com/adde88 - adde88@gmail.com - @adde88{Colors.RESET}")
-    print(f"{Colors.BLUE}Date: (05.04.26){Colors.RESET}")
+    print(f"{Colors.BLUE}Date: (13.04.26){Colors.RESET}")
     print(f"{Colors.GREEN}{Colors.BOLD}Storage Capacity ({target_drive}): {storage_str} Free{Colors.RESET}\n")
+
+def ensure_ollama_running():
+    """Checks if the Ollama background service is active before proceeding."""
+    print(f"{Colors.CYAN}[*] Verifying Ollama service status...{Colors.RESET}")
+    try:
+        # We use a lightweight CLI check with a timeout to prevent hanging if the daemon is deadlocked
+        result = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5)
+        
+        if result.returncode != 0:
+            print(f"\n{Colors.RED}{Colors.BOLD}[!] CRITICAL ERROR: Ollama daemon is not responding.{Colors.RESET}")
+            print(f"{Colors.RED}    Please ensure the Ollama app is currently running in your system tray/background.{Colors.RESET}")
+            error_msg = result.stderr.strip() if result.stderr else "Unknown connection error."
+            print(f"{Colors.YELLOW}    Details: {error_msg}{Colors.RESET}\n")
+            sys.exit(1)
+            
+    except FileNotFoundError:
+        print(f"\n{Colors.RED}{Colors.BOLD}[!] CRITICAL ERROR: 'ollama' executable not found.{Colors.RESET}")
+        print(f"{Colors.RED}    Please ensure Ollama is installed and correctly added to your Windows PATH variable.{Colors.RESET}\n")
+        sys.exit(1)
+    except subprocess.TimeoutExpired:
+        print(f"\n{Colors.RED}{Colors.BOLD}[!] CRITICAL ERROR: Ollama service check timed out.{Colors.RESET}")
+        print(f"{Colors.RED}    The background service might be hung, overloaded, or unresponsive.{Colors.RESET}\n")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n{Colors.RED}{Colors.BOLD}[!] CRITICAL ERROR: Unexpected error while checking Ollama status: {e}{Colors.RESET}\n")
+        sys.exit(1)
+        
+    print(f"{Colors.GREEN}[+] Ollama service is online.{Colors.RESET}\n")
 
 def check_disk_space(model_path: Path):
     """Checks if there is enough disk space before starting the import."""
@@ -387,7 +415,9 @@ def main():
     args = parser.parse_args()
 
     is_interactive = len(sys.argv) == 1
+    
     print_header()
+    ensure_ollama_running() # <-- Security/Validation check added here
 
     if args.uninstall:
         interactive_uninstall_models()
